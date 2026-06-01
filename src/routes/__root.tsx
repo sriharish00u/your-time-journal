@@ -11,6 +11,9 @@ import { useEffect, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
+import { ThemeProvider } from "@/components/tymeline/ThemeProvider";
+import { TabBar } from "@/components/tymeline/TabBar";
+import { Toaster } from "sonner";
 
 function NotFoundComponent() {
   return (
