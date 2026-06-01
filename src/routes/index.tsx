@@ -49,15 +49,9 @@ function TimelinePage() {
 
   const todayCount = activities.filter((a) => isToday(new Date(a.timestamp))).length;
 
-  const handleAdd = (a: Parameters<typeof setActivities>[0] extends (p: infer P) => infer _ ? never : never) => a;
-
-  const addActivity = (a: Parameters<typeof setActivities>[0] extends never ? never : Parameters<Awaited<ReturnType<typeof Promise.resolve>>>[0]) => a;
-  void handleAdd; void addActivity;
-
-  const onAdd = (activity: Parameters<typeof setActivities>[0] extends never ? never : any) => {
+  const onAdd = (activity: import("@/lib/tymeline/types").Activity) => {
     const next = [activity, ...activities];
     setActivities(next);
-    // evaluate papers
     const newPapers = evaluatePapers({
       activities: next, existing: papers, summariesCount: summaries.length,
     });
