@@ -4,8 +4,14 @@ import { format } from "date-fns";
 import { Trash2 } from "lucide-react";
 
 export function ActivityCard({
-  activity, index, onDelete,
-}: { activity: Activity; index: number; onDelete: (id: string) => void }) {
+  activity,
+  index,
+  onDelete,
+}: {
+  activity: Activity;
+  index: number;
+  onDelete: (id: string) => void;
+}) {
   const color = CATEGORY_COLORS[activity.category];
   return (
     <div
@@ -19,7 +25,9 @@ export function ActivityCard({
       <div className="flex-1 px-4 py-3.5">
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0 flex-1">
-            <h3 className="font-serif text-lg leading-tight text-foreground">{activity.name}</h3>
+            <div className="flex items-center gap-2">
+              <h3 className="font-serif text-lg leading-tight text-foreground">{activity.name}</h3>
+            </div>
             <div className="mt-1.5 flex flex-wrap items-center gap-2 text-xs text-text-secondary">
               <span
                 className="rounded-full px-2 py-0.5 font-medium"
@@ -32,7 +40,9 @@ export function ActivityCard({
             </div>
           </div>
           {activity.mood ? (
-            <div className="text-3xl leading-none" aria-label="mood">{activity.mood}</div>
+            <div className="text-3xl leading-none" aria-label="mood">
+              {activity.mood}
+            </div>
           ) : null}
         </div>
       </div>

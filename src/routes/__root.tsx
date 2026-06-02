@@ -13,6 +13,7 @@ import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { ThemeProvider } from "@/components/tymeline/ThemeProvider";
 import { TabBar } from "@/components/tymeline/TabBar";
+import { PaperEarnedNotification } from "@/components/tymeline/PaperEarnedNotification";
 import { Toaster } from "sonner";
 
 function NotFoundComponent() {
@@ -82,7 +83,11 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "viewport", content: "width=device-width, initial-scale=1, viewport-fit=cover" },
       { name: "theme-color", content: "#FAF7F2" },
       { title: "Tymeline — Your time, your story" },
-      { name: "description", content: "A private, local-first life timeline. Capture moments and reflect on how you spend your time." },
+      {
+        name: "description",
+        content:
+          "A private, local-first life timeline. Capture moments and reflect on how you spend your time.",
+      },
       { property: "og:title", content: "Tymeline" },
       { property: "og:description", content: "A private, local-first life timeline." },
       { property: "og:type", content: "website" },
@@ -91,7 +96,10 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { rel: "stylesheet", href: appCss },
       { rel: "preconnect", href: "https://fonts.googleapis.com" },
       { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
-      { rel: "stylesheet", href: "https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&display=swap" },
+      {
+        rel: "stylesheet",
+        href: "https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&display=swap",
+      },
     ],
   }),
   shellComponent: RootShell,
@@ -124,6 +132,7 @@ function RootComponent() {
           <Outlet />
         </div>
         <TabBar />
+        <PaperEarnedNotification />
         <Toaster position="top-center" richColors />
       </ThemeProvider>
     </QueryClientProvider>

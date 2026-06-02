@@ -43,6 +43,11 @@
   --color-cat-food: #8D6E63;
   --color-cat-sleep: #5C6BC0;
   --color-cat-custom: #78909C;
+  --color-cat-health: #26A69A;
+  --color-cat-social: #AB47BC;
+  --color-cat-finance: #FFA726;
+  --color-cat-creative: #EC407A;
+  --color-cat-chores: #8D8D8D;
 
   --font-serif: "DM Serif Display", ui-serif, Georgia, serif;
   --font-sans: "DM Sans", ui-sans-serif, system-ui, sans-serif;
@@ -116,3 +121,20 @@
   50% { transform: translateY(-4px); }
 }
 .float-soft { animation: float-soft 4s ease-in-out infinite; }
+
+@keyframes shimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+@media print {
+  body > *:not(.print-summary) { display: none !important; }
+  .print-summary { display: block !important; }
+  .print-summary article {
+    border: none !important;
+    box-shadow: none !important;
+    padding: 2rem !important;
+    max-width: 210mm;
+    margin: 0 auto;
+  }
+}

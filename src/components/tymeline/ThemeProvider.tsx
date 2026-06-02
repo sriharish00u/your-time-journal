@@ -8,8 +8,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
       const root = document.documentElement;
       const wantDark =
         settings.theme === "dark" ||
-        (settings.theme === "system" &&
-          window.matchMedia("(prefers-color-scheme: dark)").matches);
+        (settings.theme === "system" && window.matchMedia("(prefers-color-scheme: dark)").matches);
       root.classList.toggle("dark", wantDark);
       const meta = document.querySelector('meta[name="theme-color"]');
       if (meta) meta.setAttribute("content", wantDark ? "#141210" : "#FAF7F2");

@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useSettings } from "@/lib/tymeline/storage";
 
 export const Route = createFileRoute("/onboarding")({
@@ -7,9 +7,18 @@ export const Route = createFileRoute("/onboarding")({
 });
 
 const SLIDES = [
-  { title: "Your time, your story", body: "Tymeline is a quiet, private timeline of your moments. No streaks. No goals. Just you." },
-  { title: "No pressure, just capture", body: "Log what you did, how long, how you felt. Or skip the details. There's no wrong way." },
-  { title: "Reflect with AI", body: "Generate warm, conversational summaries of your weeks and months. Optional — turn it off in Settings." },
+  {
+    title: "Your time, your story",
+    body: "Tymeline is a quiet, private timeline of your moments. No streaks. No goals. Just you.",
+  },
+  {
+    title: "No pressure, just capture",
+    body: "Log what you did, how long, how you felt. Or skip the details. There's no wrong way.",
+  },
+  {
+    title: "Reflect with AI",
+    body: "Generate warm, conversational summaries of your weeks and months. Optional — turn it off in Settings.",
+  },
 ];
 
 function OnboardingPage() {
@@ -19,6 +28,13 @@ function OnboardingPage() {
   const [why, setWhy] = useState("");
   const [step, setStep] = useState<"slides" | "profile">("slides");
   const nav = useNavigate();
+
+  // Safety guard: if already onboarded, redirect home
+  useEffect(() => {
+    if (settings.onboarded === true) {
+      nav({ to: "/" });
+    }
+  }, [settings, nav]);
 
   const next = () => {
     if (i < SLIDES.length - 1) setI(i + 1);
@@ -43,37 +59,61 @@ function OnboardingPage() {
 
           <div className="mb-6 flex justify-center gap-1.5">
             {SLIDES.map((_, idx) => (
-              <div key={idx} className="h-1.5 rounded-full transition-all"
-                style={{ width: idx === i ? 24 : 6, backgroundColor: idx === i ? "var(--accent)" : "var(--border)" }} />
+              <div
+                key={idx}
+                className="h-1.5 rounded-full transition-all"
+                style={{
+                  width: idx === i ? 24 : 6,
+                  backgroundColor: idx === i ? "var(--accent)" : "var(--border)",
+                }}
+              />
             ))}
           </div>
 
-          <button onClick={next} className="rounded-2xl bg-accent py-3.5 font-semibold text-accent-foreground active:scale-[0.98] transition">
+          <button
+            onClick={next}
+            className="rounded-2xl bg-accent py-3.5 font-semibold text-accent-foreground active:scale-[0.98] transition"
+          >
             {i < SLIDES.length - 1 ? "Next" : "Get started"}
           </button>
-          <button onClick={finish} className="mt-2 py-2 text-sm text-text-secondary">Skip</button>
+          <button onClick={finish} className="mt-2 py-2 text-sm text-text-secondary">
+            Skip
+          </button>
         </>
       ) : (
         <>
           <div className="flex-1">
             <h1 className="font-serif text-3xl text-foreground">A little about you</h1>
-            <p className="mt-2 text-sm text-text-secondary">Both optional. You can change these later.</p>
+            <p className="mt-2 text-sm text-text-secondary">
+              Both optional. You can change these later.
+            </p>
 
             <div className="mt-8 space-y-4">
               <div>
                 <label className="text-xs font-medium text-text-secondary">Name</label>
-                <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Your name"
-                  className="mt-1 w-full rounded-xl border bg-surface px-4 py-3 outline-none focus:border-accent" />
+                <input
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder="Your name"
+                  className="mt-1 w-full rounded-xl border bg-surface px-4 py-3 outline-none focus:border-accent"
+                />
               </div>
               <div>
                 <label className="text-xs font-medium text-text-secondary">Why you track</label>
-                <textarea value={why} onChange={(e) => setWhy(e.target.value)} rows={3}
+                <textarea
+                  value={why}
+                  onChange={(e) => setWhy(e.target.value)}
+                  rows={3}
                   placeholder="To understand my days better…"
-                  className="mt-1 w-full resize-none rounded-xl border bg-surface px-4 py-3 outline-none focus:border-accent" />
+                  className="mt-1 w-full resize-none rounded-xl border bg-surface px-4 py-3 outline-none focus:border-accent"
+                />
               </div>
             </div>
           </div>
-          <button onClick={finish} className="rounded-2xl bg-accent py-3.5 font-semibold text-accent-foreground active:scale-[0.98] transition">
+          <button
+            onClick={finish}
+            className="rounded-2xl bg-accent py-3.5 font-semibold text-accent-foreground active:scale-[0.98] transition"
+          >
             Begin
           </button>
         </>

@@ -6,6 +6,7 @@ const KEYS = {
   papers: "tymeline:papers",
   summaries: "tymeline:summaries",
   settings: "tymeline:settings",
+  skippedDays: "tymeline:skipped-days",
 } as const;
 
 const DEFAULT_SETTINGS: Settings = {
@@ -31,12 +32,11 @@ function write<T>(key: string, value: T) {
 }
 
 function useLocal<T>(key: string, fallback: T): [T, (v: T | ((prev: T) => T)) => void] {
-  const [value, setValue] = useState<T>(fallback);
-  const [hydrated, setHydrated] = useState(false);
+  const [value, setValue] = useState<T>(() => read(key, fallback));
 
   useEffect(() => {
+    // Re-read on mount in case localStorage changed between lazy init and effect
     setValue(read(key, fallback));
-    setHydrated(true);
     const onChange = (e: Event) => {
       const ce = e as CustomEvent<{ key: string }>;
       if (ce.detail?.key === key) setValue(read(key, fallback));
@@ -57,7 +57,7 @@ function useLocal<T>(key: string, fallback: T): [T, (v: T | ((prev: T) => T)) =>
     [key],
   );
 
-  return [hydrated ? value : fallback, update];
+  return [value, update];
 }
 
 export function useActivities() {
@@ -69,6 +69,9 @@ export function usePapers() {
 export function useSummaries() {
   return useLocal<Summary[]>(KEYS.summaries, []);
 }
+export function useSkippedDays() {
+  return useLocal<string[]>(KEYS.skippedDays, []);
+}
 export function useSettings() {
   return useLocal<Settings>(KEYS.settings, DEFAULT_SETTINGS);
 }
@@ -79,18 +82,23 @@ export function exportAll() {
     papers: read<Paper[]>(KEYS.papers, []),
     summaries: read<Summary[]>(KEYS.summaries, []),
     settings: read<Settings>(KEYS.settings, DEFAULT_SETTINGS),
+    skippedDays: read<string[]>(KEYS.skippedDays, []),
     exportedAt: new Date().toISOString(),
   };
 }
 
 export function importAll(data: {
-  activities?: Activity[]; papers?: Paper[];
-  summaries?: Summary[]; settings?: Settings;
+  activities?: Activity[];
+  papers?: Paper[];
+  summaries?: Summary[];
+  settings?: Settings;
+  skippedDays?: string[];
 }) {
   if (data.activities) write(KEYS.activities, data.activities);
   if (data.papers) write(KEYS.papers, data.papers);
   if (data.summaries) write(KEYS.summaries, data.summaries);
   if (data.settings) write(KEYS.settings, data.settings);
+  if (data.skippedDays) write(KEYS.skippedDays, data.skippedDays);
 }
 
 export function clearAll() {
