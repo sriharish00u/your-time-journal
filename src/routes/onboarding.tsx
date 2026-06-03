@@ -1,10 +1,6 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { useSettings } from "@/lib/tymeline/storage";
-
-export const Route = createFileRoute("/onboarding")({
-  component: OnboardingPage,
-});
 
 const SLIDES = [
   {
@@ -21,7 +17,7 @@ const SLIDES = [
   },
 ];
 
-function OnboardingPage() {
+export function OnboardingPage() {
   const [settings, setSettings] = useSettings();
   const [i, setI] = useState(0);
   const [name, setName] = useState("");
@@ -29,10 +25,9 @@ function OnboardingPage() {
   const [step, setStep] = useState<"slides" | "profile">("slides");
   const nav = useNavigate();
 
-  // Safety guard: if already onboarded, redirect home
   useEffect(() => {
     if (settings.onboarded === true) {
-      nav({ to: "/" });
+      nav("/");
     }
   }, [settings, nav]);
 
@@ -42,7 +37,7 @@ function OnboardingPage() {
   };
   const finish = () => {
     setSettings({ ...settings, name: name || undefined, why: why || undefined, onboarded: true });
-    nav({ to: "/" });
+    nav("/");
   };
 
   return (

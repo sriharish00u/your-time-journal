@@ -1,24 +1,12 @@
-import { createFileRoute } from "@tanstack/react-router";
 import { useState, useMemo, useRef } from "react";
 import { useActivities, useSettings, useSummaries, usePapers } from "@/lib/tymeline/storage";
 import { evaluatePapers } from "@/lib/tymeline/papers";
 import { generateAISummary } from "@/lib/tymeline/ai.functions";
-import { useServerFn } from "@tanstack/react-start";
 import { MOOD_SCORE } from "@/lib/tymeline/categories";
 import { startOfWeek, startOfMonth, format } from "date-fns";
 import { Copy, Sparkles, Loader2, Download } from "lucide-react";
 import { toast } from "sonner";
-import type { SummaryContent, ActivityCategory } from "@/lib/tymeline/types";
-
-export const Route = createFileRoute("/summary")({
-  head: () => ({
-    meta: [
-      { title: "Reflect — Tymeline" },
-      { name: "description", content: "Reflect on how you spent your time." },
-    ],
-  }),
-  component: SummaryPage,
-});
+import type { SummaryContent } from "@/lib/tymeline/types";
 
 type Period = "week" | "month" | "all";
 
@@ -64,12 +52,10 @@ function buildLocalSummary(
 
   const paras: string[] = [];
 
-  // Opening paragraph
   paras.push(
     `Looking back ${periodLabel}, I see a story taking shape. You recorded ${activities.length} moment${activities.length > 1 ? "s" : ""} ${dayRange}, giving approximately ${totalHours} hour${totalHours > 1 ? "s" : ""} of your time a name and a place in memory. Each entry is a thread in the larger fabric of your days.`,
   );
 
-  // Category breakdown
   if (sortedCats.length > 0) {
     const catLines = sortedCats.slice(0, 4).map(([cat, min], i) => {
       const pct = Math.round((min / totalMin) * 100);
@@ -84,21 +70,18 @@ function buildLocalSummary(
     );
   }
 
-  // Most frequent activity
   if (mostFreq && mostFreq[1] > 1) {
     paras.push(
       `A familiar rhythm emerges: "${mostFreq[0]}" appears ${mostFreq[1]} time${mostFreq[1] > 1 ? "s" : ""}, more than any other activity. This repetition suggests a steady habit or a recurring commitment woven into your routine.`,
     );
   }
 
-  // Longest day
   if (longestDay && longestDay[1] > 1) {
     paras.push(
       `Your most eventful day held ${longestDay[1]} logged moment${longestDay[1] > 1 ? "s" : ""} — a rich and full span of hours. Days like these are worth noticing; they show what a full, engaged day looks like for you.`,
     );
   }
 
-  // Mood reflection
   if (avgMood) {
     const moodDesc =
       Number(avgMood) >= 4
@@ -121,7 +104,6 @@ function buildLocalSummary(
     );
   }
 
-  // Closing reflection
   paras.push(
     `Every moment you capture is an act of attention — a small pause to register that this mattered enough to remember. The patterns here are still emerging, and with each new entry the story becomes clearer. Keep going.`,
   );
@@ -129,14 +111,13 @@ function buildLocalSummary(
   return paras.join(" ");
 }
 
-function SummaryPage() {
+export function SummaryPage() {
   const [activities] = useActivities();
   const [settings] = useSettings();
   const [summaries, setSummaries] = useSummaries();
   const [papers, setPapers] = usePapers();
   const [period, setPeriod] = useState<Period>("week");
   const [loading, setLoading] = useState(false);
-  const aiFn = useServerFn(generateAISummary);
   const printRef = useRef<HTMLDivElement>(null);
 
   const scoped = useMemo(() => filterByPeriod(activities, period), [activities, period]);
@@ -147,17 +128,15 @@ function SummaryPage() {
       let content: string;
       let isAI = false;
       if (settings.aiEnabled) {
-        const res = await aiFn({
-          data: {
-            period,
-            activities: scoped.map((a) => ({
-              name: a.name,
-              category: a.category,
-              duration: a.duration,
-              mood: a.mood,
-              timestamp: a.timestamp,
-            })),
-          },
+        const res = await generateAISummary({
+          period,
+          activities: scoped.map((a) => ({
+            name: a.name,
+            category: a.category,
+            duration: a.duration,
+            mood: a.mood,
+            timestamp: a.timestamp,
+          })),
         });
         content = res.content;
         isAI = true;

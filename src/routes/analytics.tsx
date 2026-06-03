@@ -1,4 +1,3 @@
-import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { useActivities } from "@/lib/tymeline/storage";
 import { CATEGORY_COLORS, CATEGORY_HEALTH, MOOD_SCORE } from "@/lib/tymeline/categories";
@@ -16,16 +15,6 @@ import {
   Cell,
 } from "recharts";
 import { format, startOfDay, startOfWeek, startOfMonth } from "date-fns";
-
-export const Route = createFileRoute("/analytics")({
-  head: () => ({
-    meta: [
-      { title: "Analytics — Tymeline" },
-      { name: "description", content: "See how you spend your time." },
-    ],
-  }),
-  component: AnalyticsPage,
-});
 
 type Range = "today" | "week" | "month" | "all";
 const RANGES: { id: Range; label: string }[] = [
@@ -73,7 +62,7 @@ function darken(hex: string, amount: number): string {
   return `#${((r << 16) | (g << 8) | b).toString(16).padStart(6, "0")}`;
 }
 
-function AnalyticsPage() {
+export function AnalyticsPage() {
   const [activities] = useActivities();
   const [range, setRange] = useState<Range>("week");
   const filtered = useMemo(() => filterRange(activities, range), [activities, range]);

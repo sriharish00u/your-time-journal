@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, useCallback } from "react";
-import { useNavigate } from "@tanstack/react-router";
+import { useNavigate } from "react-router-dom";
 import { PAPER_ICONS } from "@/lib/tymeline/papers";
 import type { Paper } from "@/lib/tymeline/types";
 
@@ -21,7 +21,6 @@ export function PaperEarnedNotification() {
     timerRef.current = null;
   }, []);
 
-  // Process queue: show next after 600ms gap
   useEffect(() => {
     if (current !== null) return;
     if (queue.length === 0) return;
@@ -39,7 +38,6 @@ export function PaperEarnedNotification() {
     };
   }, [current, queue, dismiss]);
 
-  // Listen for custom events
   useEffect(() => {
     const handler = (e: Event) => {
       const ce = e as CustomEvent<{ paper: Paper }>;
@@ -54,7 +52,7 @@ export function PaperEarnedNotification() {
 
   const handleOpen = () => {
     dismiss();
-    navigate({ to: "/collection" });
+    navigate("/collection");
   };
 
   if (!current) return null;

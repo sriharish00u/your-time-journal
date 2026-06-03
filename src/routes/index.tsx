@@ -1,4 +1,4 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { Link, useNavigate } from "react-router-dom";
 import { useMemo, useState, useEffect } from "react";
 import { Plus, Settings as SettingsIcon } from "lucide-react";
 import {
@@ -21,16 +21,6 @@ import { format, isToday, isYesterday, differenceInMinutes } from "date-fns";
 import { toast } from "sonner";
 import type { Activity } from "@/lib/tymeline/types";
 
-export const Route = createFileRoute("/")({
-  head: () => ({
-    meta: [
-      { title: "Tymeline — Your timeline" },
-      { name: "description", content: "Your private daily activity timeline." },
-    ],
-  }),
-  component: TimelinePage,
-});
-
 function formatGap(min: number) {
   if (min < 60) return `${min} min`;
   const h = Math.round(min / 60);
@@ -44,7 +34,7 @@ function dayLabel(day: string) {
   return format(d, "EEEE, MMM d");
 }
 
-function TimelinePage() {
+export function TimelinePage() {
   const navigate = useNavigate();
   const [activities, setActivities] = useActivities();
   const [papers, setPapers] = usePapers();
@@ -57,7 +47,7 @@ function TimelinePage() {
   // Redirect onboarding (client-side)
   useEffect(() => {
     if (settings && settings.onboarded === false) {
-      navigate({ to: "/onboarding" });
+      navigate("/onboarding");
     }
   }, [settings, navigate]);
 

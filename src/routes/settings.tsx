@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { Link } from "react-router-dom";
 import { useRef } from "react";
 import {
   useSettings,
@@ -18,17 +18,7 @@ import {
 import { ChevronLeft, Download, Upload, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
-export const Route = createFileRoute("/settings")({
-  head: () => ({
-    meta: [
-      { title: "Settings — Tymeline" },
-      { name: "description", content: "Configure Tymeline." },
-    ],
-  }),
-  component: SettingsPage,
-});
-
-function SettingsPage() {
+export function SettingsPage() {
   const [settings, setSettings] = useSettings();
   const [activities] = useActivities();
   const [papers, setPapers] = usePapers();
@@ -118,7 +108,7 @@ function SettingsPage() {
       <Section title="AI Reflection">
         <ToggleRow
           label="Enable AI summaries"
-          help="Uses Lovable AI to write reflective summaries. Off uses a local stats summary."
+          help="Uses an AI service to write reflective summaries. Off uses a local stats summary."
           value={settings.aiEnabled}
           onChange={(v) => update("aiEnabled", v)}
         />

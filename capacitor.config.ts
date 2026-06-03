@@ -3,7 +3,7 @@ import { CapacitorConfig } from "@capacitor/cli";
 const config: CapacitorConfig = {
   appId: "dev.tymeline.app",
   appName: "Tymeline",
-  webDir: "dist/client",
+  webDir: "dist",
   server: {
     androidScheme: "https",
   },

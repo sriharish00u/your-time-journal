@@ -1,4 +1,3 @@
-import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { usePapers } from "@/lib/tymeline/storage";
 import { paperGradient, PAPERS, PAPER_ICONS } from "@/lib/tymeline/papers";
@@ -6,20 +5,7 @@ import { format } from "date-fns";
 import { X } from "lucide-react";
 import type { Paper } from "@/lib/tymeline/types";
 
-export const Route = createFileRoute("/collection")({
-  head: () => ({
-    meta: [
-      { title: "Papers — Tymeline" },
-      {
-        name: "description",
-        content: "Your collected papers — small marks of meaningful moments.",
-      },
-    ],
-  }),
-  component: CollectionPage,
-});
-
-function CollectionPage() {
+export function CollectionPage() {
   const [papers] = usePapers();
   const [open, setOpen] = useState<Paper | null>(null);
 
@@ -90,7 +76,6 @@ function CollectionPage() {
         </div>
       )}
 
-      {/* Unearned papers */}
       {papers.length < PAPERS.length && (
         <div className="mt-10">
           <h3 className="mb-3 text-xs font-semibold uppercase tracking-wider text-text-secondary">
@@ -111,7 +96,6 @@ function CollectionPage() {
         </div>
       )}
 
-      {/* Detail modal */}
       {open && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center p-6"

@@ -1,4 +1,4 @@
-import { Link, useLocation } from "@tanstack/react-router";
+import { Link, useLocation } from "react-router-dom";
 import { Home, BarChart3, Sparkles, Layers } from "lucide-react";
 
 const TABS = [
