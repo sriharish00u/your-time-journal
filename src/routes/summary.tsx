@@ -6,6 +6,7 @@ import { MOOD_SCORE } from "@/lib/tymeline/categories";
 import { startOfWeek, startOfMonth, format } from "date-fns";
 import { Copy, Sparkles, Loader2, Download } from "lucide-react";
 import { toast } from "sonner";
+import { showRewardedInterstitial, isCapacitorNative } from "@/lib/tymeline/ads";
 import type { SummaryContent } from "@/lib/tymeline/types";
 
 type Period = "week" | "month" | "all";
@@ -118,11 +119,28 @@ export function SummaryPage() {
   const [papers, setPapers] = usePapers();
   const [period, setPeriod] = useState<Period>("week");
   const [loading, setLoading] = useState(false);
+  const [adPending, setAdPending] = useState(false);
+  const [pdfAdPending, setPdfAdPending] = useState(false);
   const printRef = useRef<HTMLDivElement>(null);
 
   const scoped = useMemo(() => filterByPeriod(activities, period), [activities, period]);
 
   const generate = async () => {
+    if (loading || adPending) return;
+
+    setAdPending(true);
+    const rewarded = await showRewardedInterstitial();
+    setAdPending(false);
+
+    if (!rewarded) {
+      if (!isCapacitorNative() && !import.meta.env.DEV) {
+        toast.error("Ads not available in this environment.");
+      } else {
+        toast.error("Watch the full ad to generate a summary.");
+      }
+      return;
+    }
+
     setLoading(true);
     try {
       let content: string;
@@ -206,11 +224,27 @@ export function SummaryPage() {
         <div ref={printRef} className="print-summary">
           <PaperCard summary={latest} />
           <button
-            onClick={() => window.print()}
-            className="mt-3 flex w-full items-center justify-center gap-2 rounded-2xl border bg-surface py-3 text-sm font-medium text-foreground transition active:scale-[0.98]"
+            onClick={async () => {
+              if (pdfAdPending) return;
+              setPdfAdPending(true);
+              const rewarded = await showRewardedInterstitial();
+              setPdfAdPending(false);
+              if (!rewarded) {
+                toast.error("Watch the full ad to export as PDF.");
+                return;
+              }
+              window.print();
+            }}
+            disabled={pdfAdPending}
+            className="mt-3 flex w-full items-center justify-center gap-2 rounded-2xl border bg-surface py-3 text-sm font-medium text-foreground transition active:scale-[0.98] disabled:opacity-40"
           >
-            <Download size={16} />
-            Export as PDF
+            {pdfAdPending ? <Loader2 size={16} className="animate-spin" /> : <Download size={16} />}
+            {pdfAdPending ? "Loading ad…" : "Export as PDF"}
+            {!pdfAdPending && (
+              <span className="ml-1 rounded-full bg-accent-soft px-2 py-0.5 text-[10px] text-accent">
+                Watch ad
+              </span>
+            )}
           </button>
           <p className="mt-1.5 text-center text-[10px] text-text-secondary">
             Opens your browser's print dialog — save as PDF.
@@ -230,11 +264,22 @@ export function SummaryPage() {
 
       <button
         onClick={generate}
-        disabled={loading || scoped.length === 0}
+        disabled={loading || adPending || scoped.length === 0}
         className="mt-5 flex w-full items-center justify-center gap-2 rounded-2xl bg-accent py-3.5 font-semibold text-accent-foreground transition active:scale-[0.98] disabled:opacity-40"
       >
-        {loading ? <Loader2 size={18} className="animate-spin" /> : <Sparkles size={18} />}
-        {loading ? "Reflecting…" : latest ? "Regenerate" : "Generate Summary"}
+        {loading || adPending
+          ? <Loader2 size={18} className="animate-spin" />
+          : <Sparkles size={18} />}
+        {loading
+          ? "Reflecting…"
+          : adPending
+          ? "Loading ad…"
+          : latest ? "Regenerate" : "Generate Summary"}
+        {!loading && !adPending && (
+          <span className="rounded-full bg-accent-soft px-2 py-0.5 text-[10px] text-accent-foreground/80">
+            Watch ad
+          </span>
+        )}
       </button>
 
       {periodSummaries.length > 1 && (

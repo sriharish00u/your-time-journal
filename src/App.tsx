@@ -1,10 +1,13 @@
-import React, { type ReactNode } from "react";
-import { Routes, Route, Link, Outlet } from "react-router-dom";
+import React, { type ReactNode, useEffect } from "react";
+import { Routes, Route, Link, Outlet, useLocation } from "react-router-dom";
 import { ThemeProvider } from "@/components/tymeline/ThemeProvider";
 import { TabBar } from "@/components/tymeline/TabBar";
 import { PaperEarnedNotification } from "@/components/tymeline/PaperEarnedNotification";
 import { Toaster } from "sonner";
+import { useSettings } from "@/lib/tymeline/storage";
+import { showSessionInterstitial, showBanner, removeBanner } from "@/lib/tymeline/ads";
 import { TimelinePage } from "./routes/index";
+import { DiaryPage } from "./routes/diary";
 import { AnalyticsPage } from "./routes/analytics";
 import { CollectionPage } from "./routes/collection";
 import { OnboardingPage } from "./routes/onboarding";
@@ -90,21 +93,52 @@ class ErrorBoundary extends React.Component<
   }
 }
 
+function AdBannerController() {
+  const location = useLocation();
+
+  useEffect(() => {
+    const BANNER_ROUTES = ["/", "/diary"];
+    if (BANNER_ROUTES.includes(location.pathname)) {
+      showBanner(location.pathname);
+    } else {
+      removeBanner();
+    }
+    return () => {
+      removeBanner();
+    };
+  }, [location.pathname]);
+
+  return null;
+}
+
 function Layout() {
+  const location = useLocation();
   return (
-    <div className="mx-auto min-h-screen max-w-md pb-24">
-      <Outlet />
-    </div>
+    <>
+      <div className="mx-auto min-h-screen max-w-md pb-24">
+        <Outlet />
+      </div>
+      {location.pathname !== "/onboarding" && <TabBar />}
+    </>
   );
 }
 
 function App() {
+  const [settings] = useSettings();
+
+  useEffect(() => {
+    if (settings?.onboarded === false) return;
+    const t = setTimeout(() => { showSessionInterstitial(); }, 1500);
+    return () => clearTimeout(t);
+  }, [settings?.onboarded]);
+
   return (
     <ErrorBoundary fallback={null}>
       <ThemeProvider>
         <Routes>
           <Route element={<Layout />}>
             <Route path="/" element={<TimelinePage />} />
+            <Route path="/diary" element={<DiaryPage />} />
             <Route path="/analytics" element={<AnalyticsPage />} />
             <Route path="/collection" element={<CollectionPage />} />
             <Route path="/summary" element={<SummaryPage />} />
@@ -113,7 +147,7 @@ function App() {
           </Route>
           <Route path="*" element={<NotFoundPage />} />
         </Routes>
-        <TabBar />
+        <AdBannerController />
         <PaperEarnedNotification />
         <Toaster position="top-center" richColors />
       </ThemeProvider>

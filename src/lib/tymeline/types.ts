@@ -19,10 +19,11 @@ export interface Activity {
   id: string;
   name: string;
   category: ActivityCategory;
-  duration?: number; // minutes
+  emoji?: string;
+  duration?: number;
   mood?: string;
-  timestamp: string; // ISO — start time
-  endTime?: string; // ISO — end time
+  timestamp: string;
+  endTime?: string;
   createdAt: string;
 }
 
@@ -72,6 +73,16 @@ export interface Summary {
   isAI: boolean;
 }
 
+export interface ClosedDiary {
+  id: string;
+  year: number;
+  sealedAt: string;
+  activities: Activity[];
+  summary?: string;
+  totalHours: number;
+  topCategories: { category: ActivityCategory; minutes: number }[];
+}
+
 export interface Settings {
   name?: string;
   why?: string;
@@ -79,4 +90,5 @@ export interface Settings {
   theme: "system" | "light" | "dark";
   onboarded?: boolean;
   notificationsEnabled?: boolean;
+  pdfExportTarget?: "summary" | "diary";
 }

@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import {
   useSettings,
   useActivities,
@@ -10,19 +10,34 @@ import {
   clearAll,
 } from "@/lib/tymeline/storage";
 import { evaluatePapers } from "@/lib/tymeline/papers";
+import { paperGradient, PAPERS, PAPER_ICONS } from "@/lib/tymeline/papers";
 import {
   rescheduleAllNotifications,
   requestNotificationPermission,
   cancelAllTymelineNotifications,
 } from "@/lib/tymeline/notifications";
-import { ChevronLeft, Download, Upload, Trash2 } from "lucide-react";
+import { ChevronLeft, Download, Upload, Trash2, FileText, X, Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import { showRewardedInterstitial } from "@/lib/tymeline/ads";
+import { format } from "date-fns";
+import type { Paper, Activity } from "@/lib/tymeline/types";
+
+function formatDur(min: number) {
+  if (min < 60) return `${min}m`;
+  const h = Math.floor(min / 60);
+  const m = min % 60;
+  return m ? `${h}h ${m}m` : `${h}h`;
+}
 
 export function SettingsPage() {
   const [settings, setSettings] = useSettings();
   const [activities] = useActivities();
   const [papers, setPapers] = usePapers();
   const [summaries] = useSummaries();
+  const [openPaper, setOpenPaper] = useState<Paper | null>(null);
+  const [unlockedHints, setUnlockedHints] = useState<Set<string>>(new Set());
+  const [settingsPdfPending, setSettingsPdfPending] = useState(false);
+  const [hintAdPending, setHintAdPending] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
   const update = <K extends keyof typeof settings>(k: K, v: (typeof settings)[K]) =>
@@ -53,16 +68,16 @@ export function SettingsPage() {
     try {
       const text = await file.text();
       const data = JSON.parse(text);
-      importAll(data);
       const newPapers = evaluatePapers({
         activities: data.activities ?? [],
         existing: data.papers ?? [],
         summariesCount: (data.summaries ?? []).length,
         didImport: true,
       });
-      if (newPapers.length) {
-        importAll({ papers: [...(data.papers ?? []), ...newPapers] });
-      }
+      importAll({
+        ...data,
+        papers: [...(data.papers ?? []), ...newPapers],
+      });
       toast.success("Data imported");
     } catch {
       toast.error("Invalid backup file");
@@ -73,6 +88,75 @@ export function SettingsPage() {
     if (confirm("Erase ALL Tymeline data? This cannot be undone.")) {
       clearAll();
       toast.success("All data cleared");
+    }
+  };
+
+  const onExportPdf = async () => {
+    if (settingsPdfPending) return;
+    setSettingsPdfPending(true);
+    const rewarded = await showRewardedInterstitial();
+    setSettingsPdfPending(false);
+    if (!rewarded) {
+      toast.error("Watch the full ad to export your diary as PDF.");
+      return;
+    }
+    if (settings.pdfExportTarget === "diary") {
+      const printWindow = window.open("", "_blank");
+      if (!printWindow) return;
+
+      const dayMap = new Map<string, Activity[]>();
+      for (const a of activities) {
+        const k = new Date(a.timestamp).toDateString();
+        if (!dayMap.has(k)) dayMap.set(k, []);
+        dayMap.get(k)!.push(a);
+      }
+      const days = Array.from(dayMap.entries()).sort(
+        (a, b) => new Date(a[0]).getTime() - new Date(b[0]).getTime(),
+      );
+
+      const rows = days
+        .map(([dateKey, acts]) => {
+          const sorted = [...acts].sort(
+            (a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime(),
+          );
+          const entries = sorted
+            .map(
+              (a) =>
+                `<tr>
+                  <td style="color:#888;font-family:monospace;font-size:11px;padding:4px 8px 4px 0;white-space:nowrap">${format(new Date(a.timestamp), "HH:mm")}</td>
+                  <td style="font-size:13px;padding:4px 0">${a.emoji ?? ""} ${a.name}</td>
+                  <td style="color:#aaa;font-size:11px;padding:4px 8px;text-align:right">${a.duration ? formatDur(a.duration) : ""}</td>
+                  <td style="font-size:16px;padding:4px 0;text-align:right">${a.mood ?? ""}</td>
+                </tr>`,
+            )
+            .join("");
+          return `
+            <div style="margin-bottom:32px;page-break-inside:avoid">
+              <div style="display:flex;justify-content:space-between;border-bottom:1px solid #e0e0e0;margin-bottom:8px;padding-bottom:4px">
+                <strong style="font-family:Georgia,serif;font-size:16px">${format(new Date(dateKey), "EEEE, MMMM d")}</strong>
+                <span style="font-family:monospace;font-size:20px;font-weight:bold;color:#D4622A">${format(new Date(dateKey), "dd")}</span>
+              </div>
+              <table style="width:100%;border-collapse:collapse">${entries}</table>
+            </div>`;
+        })
+        .join("");
+
+      printWindow.document.write(`<!DOCTYPE html>
+        <html><head><title>Tymeline Diary ${new Date().getFullYear()}</title>
+        <style>
+          body { font-family: -apple-system, sans-serif; max-width: 600px; margin: 40px auto; color: #1a1a1a; }
+          h1 { font-family: Georgia, serif; font-size: 32px; color: #D4622A; margin-bottom: 4px; }
+          @media print { @page { margin: 1.5cm; } }
+        </style>
+        </head><body>
+        <h1>Tymeline</h1>
+        <p style="color:#888;font-size:12px;margin-bottom:32px">Exported ${format(new Date(), "MMMM d, yyyy")}</p>
+        ${rows}
+        </body></html>`);
+      printWindow.document.close();
+      printWindow.print();
+    } else {
+      window.print();
     }
   };
 
@@ -129,6 +213,109 @@ export function SettingsPage() {
             }
           }}
         />
+      </Section>
+
+      <Section title="Achievements">
+        <div className="mb-2 flex items-center justify-between text-xs text-text-secondary">
+          <span className="font-semibold">{papers.length} / {PAPERS.length} earned</span>
+          <span>{Math.round((papers.length / PAPERS.length) * 100)}%</span>
+        </div>
+        <div className="mb-3 h-2 overflow-hidden rounded-full bg-border">
+          <div
+            className="h-full rounded-full bg-accent transition-all duration-700"
+            style={{ width: `${(papers.length / PAPERS.length) * 100}%` }}
+          />
+        </div>
+        {papers.length === 0 ? (
+          <p className="text-sm text-text-secondary italic">No papers yet — log moments to earn them.</p>
+        ) : (
+          <div className="grid grid-cols-3 gap-2">
+            {papers.map((p) => (
+              <button
+                key={p.id}
+                onClick={() => setOpenPaper(p)}
+                className="relative flex flex-col items-center gap-1 overflow-hidden rounded-xl p-3 text-center transition active:scale-95"
+                style={{ background: paperGradient(p.id) }}
+              >
+                <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-black/20" />
+                <span className="relative z-10 text-2xl drop-shadow">{PAPER_ICONS[p.type] ?? "📜"}</span>
+                <span className="relative z-10 font-serif text-[11px] leading-tight text-white drop-shadow">
+                  {p.title}
+                </span>
+              </button>
+            ))}
+          </div>
+        )}
+        {papers.length < PAPERS.length && (
+          <details className="mt-2">
+            <summary className="cursor-pointer text-xs text-text-secondary">
+              {PAPERS.length - papers.length} more to unlock
+            </summary>
+            <div className="mt-2 grid grid-cols-3 gap-2">
+              {PAPERS.filter((d) => !papers.some((p) => p.type === d.type)).map((d) => (
+                <div
+                  key={d.type}
+                  className="flex flex-col items-center gap-1 rounded-xl border-2 border-dashed border-border p-3 text-center"
+                >
+                  <span className="text-xl">🔒</span>
+                  <span className="font-serif text-[10px] text-foreground/60">{d.title}</span>
+                  {unlockedHints.has(d.type) ? (
+                    <p className="mt-1 text-[9px] leading-tight text-text-secondary">{d.reason}</p>
+                  ) : (
+                    <button
+                      className="mt-1 rounded-full bg-accent-soft px-2 py-0.5 text-[9px] text-accent disabled:opacity-50"
+                      disabled={hintAdPending === d.type}
+                      onClick={async () => {
+                        if (hintAdPending) return;
+                        setHintAdPending(d.type);
+                        const rewarded = await showRewardedInterstitial();
+                        setHintAdPending(null);
+                        if (rewarded) {
+                          setUnlockedHints((prev) => new Set([...prev, d.type]));
+                        } else {
+                          toast.error("Watch the full ad to reveal the hint.");
+                        }
+                      }}
+                    >
+                      Reveal hint
+                    </button>
+                  )}
+                </div>
+              ))}
+            </div>
+          </details>
+        )}
+      </Section>
+
+      <Section title="Export">
+        <ToggleRow
+          label="PDF export target"
+          help={
+            settings.pdfExportTarget === "diary"
+              ? "Exporting full diary when you tap Export PDF."
+              : "Exporting current summary when you tap Export PDF."
+          }
+          value={settings.pdfExportTarget === "diary"}
+          onChange={(v) => update("pdfExportTarget", v ? "diary" : "summary")}
+        />
+        <button
+          onClick={onExportPdf}
+          disabled={settingsPdfPending}
+          className="flex w-full items-center justify-between rounded-xl border bg-surface px-4 py-3 text-sm disabled:opacity-40"
+        >
+          <span className="flex items-center gap-3">
+            {settingsPdfPending ? <Loader2 size={16} className="animate-spin" /> : <FileText size={16} />}
+            {settingsPdfPending ? "Loading ad…" : "Export as PDF"}
+            {!settingsPdfPending && (
+              <span className="rounded-full bg-accent-soft px-2 py-0.5 text-[10px] text-accent">
+                Watch ad
+              </span>
+            )}
+          </span>
+          <span className="text-xs text-text-secondary">
+            {settings.pdfExportTarget === "diary" ? "Full diary" : "Reflect summary"}
+          </span>
+        </button>
       </Section>
 
       <Section title="Theme">
@@ -190,6 +377,31 @@ export function SettingsPage() {
           Built with care. No accounts. No cloud. Just you.
         </p>
       </Section>
+
+      {openPaper && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-6" role="dialog" aria-modal>
+          <div className="absolute inset-0 bg-foreground/50 backdrop-blur-sm" onClick={() => setOpenPaper(null)} />
+          <div
+            className="relative w-full max-w-xs overflow-hidden rounded-3xl border p-8 text-center"
+            style={{ background: paperGradient(openPaper.id), animation: "popIn 280ms cubic-bezier(0.16,1,0.3,1)" }}
+          >
+            <button onClick={() => setOpenPaper(null)} className="absolute right-3 top-3 rounded-full bg-white/20 p-1.5 text-white">
+              <X size={16} />
+            </button>
+            <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-black/20" />
+            <div className="relative text-white">
+              <div className="mb-4 text-7xl leading-none drop-shadow">{PAPER_ICONS[openPaper.type] ?? "📜"}</div>
+              <h2 className="font-serif text-2xl leading-tight drop-shadow">{openPaper.title}</h2>
+              <p className="mt-2 text-sm opacity-95">{openPaper.reason}</p>
+              <p className="mt-5 text-xs uppercase tracking-wider opacity-80">
+                Earned {format(new Date(openPaper.earnedAt), "MMMM d, yyyy")}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <style>{`@keyframes popIn { from { opacity: 0; transform: scale(0.9); } to { opacity: 1; transform: none; } }`}</style>
     </div>
   );
 }

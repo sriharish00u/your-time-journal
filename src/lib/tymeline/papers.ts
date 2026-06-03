@@ -36,7 +36,8 @@ function consecutiveDays(activities: Activity[], n: number): boolean {
   const days = uniqueDays(activities);
   let streak = 1;
   for (let i = 1; i < days.length; i++) {
-    if (days[i] - days[i - 1] === 86400000) {
+    const diff = days[i] - days[i - 1];
+    if (diff >= 82800000 && diff <= 90000000) {
       streak++;
       if (streak >= n) return true;
     } else {
@@ -129,9 +130,9 @@ export const PAPERS: PaperDef[] = [
   },
   {
     type: "emoji-lover",
-    title: "Mood Lover",
-    reason: "Added mood to 10 activities",
-    check: ({ activities }) => activities.filter((a) => a.mood).length >= 10,
+    title: "Emoji Logger",
+    reason: "Added an emoji to 10 activities",
+    check: ({ activities }) => activities.filter((a) => (a as Activity & { emoji?: string }).emoji).length >= 10,
   },
   {
     type: "chained",

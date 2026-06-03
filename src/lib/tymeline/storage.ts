@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from "react";
-import type { Activity, Paper, Settings, Summary } from "./types";
+import type { Activity, Paper, Settings, Summary, ClosedDiary } from "./types";
 
 const KEYS = {
   activities: "tymeline:activities",
@@ -7,6 +7,7 @@ const KEYS = {
   summaries: "tymeline:summaries",
   settings: "tymeline:settings",
   skippedDays: "tymeline:skipped-days",
+  closedDiaries: "tymeline:closed-diaries",
 } as const;
 
 const DEFAULT_SETTINGS: Settings = {
@@ -35,16 +36,16 @@ function useLocal<T>(key: string, fallback: T): [T, (v: T | ((prev: T) => T)) =>
   const [value, setValue] = useState<T>(() => read(key, fallback));
 
   useEffect(() => {
-    // Re-read on mount in case localStorage changed between lazy init and effect
     setValue(read(key, fallback));
     const onChange = (e: Event) => {
       const ce = e as CustomEvent<{ key: string }>;
-      if (ce.detail?.key === key) setValue(read(key, fallback));
+      if (ce.detail?.key === key || ce.detail?.key === "*") {
+        setValue(read(key, fallback));
+      }
     };
     window.addEventListener("tymeline:change", onChange);
     return () => window.removeEventListener("tymeline:change", onChange);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [key]);
+  }, [key]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const update = useCallback(
     (next: T | ((prev: T) => T)) => {
@@ -75,6 +76,9 @@ export function useSkippedDays() {
 export function useSettings() {
   return useLocal<Settings>(KEYS.settings, DEFAULT_SETTINGS);
 }
+export function useClosedDiaries() {
+  return useLocal<ClosedDiary[]>(KEYS.closedDiaries, []);
+}
 
 export function exportAll() {
   return {
@@ -83,6 +87,7 @@ export function exportAll() {
     summaries: read<Summary[]>(KEYS.summaries, []),
     settings: read<Settings>(KEYS.settings, DEFAULT_SETTINGS),
     skippedDays: read<string[]>(KEYS.skippedDays, []),
+    closedDiaries: read<ClosedDiary[]>(KEYS.closedDiaries, []),
     exportedAt: new Date().toISOString(),
   };
 }
@@ -93,12 +98,14 @@ export function importAll(data: {
   summaries?: Summary[];
   settings?: Settings;
   skippedDays?: string[];
+  closedDiaries?: ClosedDiary[];
 }) {
   if (data.activities) write(KEYS.activities, data.activities);
   if (data.papers) write(KEYS.papers, data.papers);
   if (data.summaries) write(KEYS.summaries, data.summaries);
   if (data.settings) write(KEYS.settings, data.settings);
   if (data.skippedDays) write(KEYS.skippedDays, data.skippedDays);
+  if (data.closedDiaries) write(KEYS.closedDiaries, data.closedDiaries);
 }
 
 export function clearAll() {

@@ -11,6 +11,10 @@ const config: CapacitorConfig = {
     SplashScreen: {
       launchShowDuration: 0,
     },
+    AdMob: {
+      appId: "ca-app-pub-2642508269663537~1659395746",
+      testingDevices: [],
+    },
   },
 };
 
